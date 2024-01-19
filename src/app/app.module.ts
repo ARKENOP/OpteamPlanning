@@ -8,7 +8,7 @@ import { HttpClientModule } from '@angular/common/http';
 
 const googleLoginOptions: GoogleInitOptions = {
   oneTapEnabled: false,
-  scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+  scopes: 'https://www.googleapis.com/auth/calendar',
 };
 @NgModule({
   declarations: [AppComponent],
