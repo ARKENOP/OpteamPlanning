@@ -1,18 +1,32 @@
-import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-
-import { AppRoutingModule } from './app-routing.module';
+import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
+import { ReactiveFormsModule } from '@angular/forms';
+import { SocialLoginModule, SocialAuthServiceConfig } from '@abacritt/angularx-social-login';
+import { GoogleLoginProvider, GoogleSigninButtonModule, GoogleInitOptions } from '@abacritt/angularx-social-login';
+import { HttpClientModule } from '@angular/common/http';
 
+const googleLoginOptions: GoogleInitOptions = {
+  oneTapEnabled: false,
+  scopes: 'https://www.googleapis.com/auth/calendar.readonly',
+};
 @NgModule({
-  declarations: [
-    AppComponent
+  declarations: [AppComponent],
+  imports: [BrowserModule, ReactiveFormsModule, SocialLoginModule, GoogleSigninButtonModule, HttpClientModule],
+  providers: [
+    {
+      provide: 'SocialAuthServiceConfig',
+      useValue: {
+        autoLogin: false,
+        providers: [
+          {
+            id: GoogleLoginProvider.PROVIDER_ID,
+            provider: new GoogleLoginProvider('155162922277-fbm0s0dr0tdovn2i5s382o0eiknitbou.apps.googleusercontent.com', googleLoginOptions),
+          },
+        ],
+      } as SocialAuthServiceConfig,
+    },
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
