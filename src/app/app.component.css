@@ -1,0 +1,11 @@
+.centered-container {
+    display: flex;
+    justify-content: center;
+}
+.calendar-container {
+    margin: 80px; 
+}
+  
+.fc-toolbar { 
+    text-transform: capitalize; 
+}

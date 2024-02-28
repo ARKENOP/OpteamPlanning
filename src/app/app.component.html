@@ -1,30 +1,130 @@
-<h1>Google Login</h1>
-<asl-google-signin-button *ngIf="!loggedIn" type='standard' size='large' shape="square" text="signin_with"></asl-google-signin-button>
-<div *ngIf="loggedIn">
-  <img *ngIf="user.photoUrl" [src]="user.photoUrl" alt="User Photo">
-  <h4>{{ user.name }}</h4>
-  <p>{{ user.email }}</p>
-  <div *ngFor="let calendarEvents of [primaryCalendarEvents, testApiCalendarEvents]">
-    <h2>{{ calendarEvents === primaryCalendarEvents ? 'Primary Calendar' : 'Vacances du personnel' }} Events:</h2>
-    <table>
-      <tbody>
-        <tr *ngFor="let event of calendarEvents">
-          <td>{{ event.summary }}</td>
-          <td>{{ event.description || 'N/A' }}</td>
-          <td>{{ event.start?.dateTime | date:'medium' }}</td>
-          <td>{{ event.end?.dateTime | date:'medium' }}</td>
-          <td>{{ event.start?.timeZone }}</td>
-          <td>{{ event.organizer?.displayName || 'N/A' }}</td>
-          <td>{{ event.location || 'N/A' }}</td>
-          <td>{{ event.visibility || 'N/A' }}</td>
-          <td>{{ event.htmlLink || 'N/A' }}</td>
-          <td>{{ event.attendees?.email}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <button *ngIf="loggedIn" (click)="signOut()">SignOut</button>
-  <button *ngIf="loggedIn" (click)="getGoogleCalendarData()">Google Calendar</button>
-  <button *ngIf="loggedIn" (click)="refreshToken()">Refresh Token</button>
-  <button *ngIf="loggedIn" (click)="addEventToPrimaryCalendar()">Ajouter un événement</button>
+<!-- Page de connexion -->
+<div *ngIf="!loggedIn">
+  <section class="vh-100" style="background-color: #0b89d6;">
+    <div class="container py-5 h-100">
+      <div class="row d-flex justify-content-center align-items-center h-100">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+          <div class="card shadow-2-strong" style="border-radius: 1rem;">
+            <div class="card-body p-5 text-center">
+              <img src="../assets/images/7opteam_logo.png" alt="Logo 7Opteam" class="mb-4" style="max-width: 80px;">
+              <h3 class="mb-3">Bienvenue sur OpteamPlanning !</h3>
+              <p class="mb-5 text-danger">Avant de commencer, assurez-vous de vérifier si votre navigateur autorise l'ouverture de pop-ups. OpteamPlanning utilise deux fenêtres de connexion, veuillez valider les deux pop-ups pour accéder à toutes les fonctionnalités.</p>
+              <div class="centered-container">
+                <asl-google-signin-button type='standard' size='large' shape="square" text="signin_with"></asl-google-signin-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
+
+
+<!-- Navbar -->
+<div *ngIf="loggedIn">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid justify-content-between">
+      <div class="d-flex">
+        <a class="navbar-brand me-2 mb-1 d-flex align-items-center">
+          <img
+            src="../assets/images/7opteam_logo_large.webp"
+            class="me-2"
+            height="35"
+            alt=""
+            loading="lazy"/>
+        </a>
+      </div>
+      <span class="navbar-text mx-auto">Opteam Planning</span>
+      <ul class="navbar-nav flex-row">
+        <li class="nav-item me-3 me-lg-1">
+          <a class="nav-link d-sm-flex align-items-sm-center">
+            <strong class="d-none d-sm-block ms-1">{{ user.name }}</strong>
+            <div class="dropdown">
+              <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <img
+                  src="{{ user.photoUrl }}"
+                  class="rounded-circle"
+                  height="22"
+                  alt=""
+                  loading="lazy"
+                />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li><a class="dropdown-item" style="cursor: pointer; color: red;" (click)="signOut()">Déconnexion</a></li>
+              </ul>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</div>
+
+<!-- Calendrier -->
+<full-calendar *ngIf="loggedIn" [options]="calendarOptions" class="calendar-container"></full-calendar>
+
+<!-- Modal d'ajout d'événement -->
+<ng-template #modalAddEvent let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title">Ajouter un événement</h4>
+    <button type="button" class="close" aria-label="Close" (click)="modal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="eventAddedSuccessfully" class="alert alert-success" role="alert">
+      Événement ajouté avec succès !
+    </div>
+    <div *ngIf="eventAddError" class="alert alert-danger" role="alert">
+      Une erreur s'est produite lors de l'ajout de l'événement. Veuillez réessayer plus tard.
+    </div>        
+    <form (ngSubmit)="onSubmit()" class="needs-validation" novalidate>
+      <div class="mb-3">
+        <label for="eventTitle" class="form-label">Type d'événement:</label>
+        <select class="form-select" id="eventTitle" name="eventTitle" [(ngModel)]="newEvent.title" required>
+          <option value="Présence">Présence</option>
+          <option value="Absence">Absence</option>
+          <option value="Formation">Formation</option>
+          <option value="Congés">Congés</option>
+          <option value="Repos">Repos</option>
+          <option value="Team Connect">Team Connect</option>
+          <option value="Evenement special">Événement spécial</option>
+        </select>
+        <div class="invalid-feedback">
+          Veuillez sélectionner un type d'événement.
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="eventTime" class="form-label">Moment de la journée:</label>
+        <select class="form-select" id="eventTime" name="eventTime" [(ngModel)]="newEvent.time" required>
+          <option value="allDay">Toute la journée</option>
+          <option value="morning">Matin</option>
+          <option value="afternoon">Après-midi</option>
+        </select>
+        <div class="invalid-feedback">
+          Veuillez sélectionner un moment de la journée.
+        </div>
+      </div>
+    
+      <div class="mb-3">
+        <label for="eventStart" class="form-label">Date de début:</label>
+        <input type="date" class="form-control" id="eventStart" name="eventStart" [(ngModel)]="newEvent.start" required>
+        <div class="invalid-feedback">
+          Veuillez fournir une date de début.
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label for="eventEnd" class="form-label">Date de fin:</label>
+        <input type="date" class="form-control" id="eventEnd" name="eventEnd" [(ngModel)]="newEvent.end" required>
+        <div class="invalid-feedback">
+          Veuillez fournir une date de fin.
+        </div>
+      </div>
+    
+      <button type="submit" class="btn btn-primary">Ajouter un événement</button>
+    </form>
+  </div>
+</ng-template>
